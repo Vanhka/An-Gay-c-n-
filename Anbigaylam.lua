@@ -1,48 +1,53 @@
--- [[ SCRIPT: DUC AN THICH GAY - PRO VERSION ]] --
+-- [[ SCRIPT: ĐỨC AN THÍCH GAY - FIX RESET CAMERA ]] --
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local UIListLayout = Instance.new("UIListLayout")
 local Title = Instance.new("TextLabel")
 local HttpService = game:GetService("HttpService")
 
--- HỆ THỐNG LƯU TRỮ VĨNH VIỄN
+-- HỆ THỐNG LƯU TRỮ
 local FileName = "DucAnThichGay_Config.json"
-local Data = {P1 = {-370, -250, 310}, P2 = {0,0,0}, Cam = nil}
+local Data = {P1 = {-370, -250, 310}, P2 = {0, 0, 0}, Cam = nil}
 
 local function Save() writefile(FileName, HttpService:JSONEncode(Data)) end
-local function Load() if isfile(FileName) then Data = HttpService:JSONDecode(readfile(FileName)) end end
+local function Load() 
+    if isfile(FileName) then 
+        local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(FileName)) end)
+        if success then Data = decoded end
+    end 
+end
 pcall(Load)
 
--- GIAO DIỆN MENU
+-- GIAO DIỆN
 ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Name = "DucAnThichGayMenu"
-
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BackgroundTransparency = 0.2
-MainFrame.Size = UDim2.new(0, 230, 0, 420)
+MainFrame.Size = UDim2.new(0, 240, 0, 480) -- Tăng xíu để thêm nút
 MainFrame.Position = UDim2.new(0.7, 0, 0.3, 0)
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame)
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Color3.fromRGB(255, 0, 0)
+UIStroke.Thickness = 2
 
--- Tiêu đề cho "oai"
 Title.Parent = MainFrame
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Text = "ĐỨC AN THÍCH GAY 🌈"
-Title.TextColor3 = Color3.fromRGB(255, 0, 0)
+Title.TextColor3 = Color3.fromRGB(255, 50, 50)
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
+Title.TextSize = 20
 
 UIListLayout.Parent = MainFrame
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.Padding = UDim.new(0, 5)
 local pad = Instance.new("UIPadding", MainFrame)
-pad.PaddingTop = UDim.new(0, 40)
+pad.PaddingTop = UDim.new(0, 45)
 
 local function NewBtn(txt, col)
     local b = Instance.new("TextButton", MainFrame)
-    b.Size = UDim2.new(0.9, 0, 0, 32)
+    b.Size = UDim2.new(0.9, 0, 0, 30)
     b.BackgroundColor3 = col or Color3.new(1,1,1)
     b.Text = txt
     b.Font = Enum.Font.SourceSansBold
@@ -61,26 +66,27 @@ local function NewLbl(t)
     return l
 end
 
--- --- THIẾT LẬP NÚT ---
-local l1 = NewLbl("Vị trí 1: "..table.concat(Data.P1, ", "))
-local g1 = NewBtn("GHI TỌA ĐỘ 1", Color3.fromRGB(200, 255, 200))
-local t1 = NewBtn("TELE TỚI VỊ TRÍ 1", Color3.new(1,1,1))
+-- --- CÁC NÚT BẤM ---
+local l1 = NewLbl("P1: "..table.concat(Data.P1, ", "))
+local g1 = NewBtn("GHI VỊ TRÍ 1", Color3.fromRGB(150, 255, 150))
+local t1 = NewBtn("TELEPORT VỊ TRÍ 1", Color3.new(1,1,1))
 
-local l2 = NewLbl("Vị trí 2: "..table.concat(Data.P2, ", "))
-local g2 = NewBtn("GHI TỌA ĐỘ 2", Color3.fromRGB(200, 255, 200))
-local t2 = NewBtn("TELE TỚI VỊ TRÍ 2", Color3.new(1,1,1))
+local l2 = NewLbl("P2: "..table.concat(Data.P2, ", "))
+local g2 = NewBtn("GHI VỊ TRÍ 2", Color3.fromRGB(150, 255, 150))
+local t2 = NewBtn("TELEPORT VỊ TRÍ 2", Color3.new(1,1,1))
 
-local lc = NewLbl(Data.Cam and "Cam: Đã có góc lưu 📸" or "Cam: Chưa ghi góc")
-local gc = NewBtn("GHI GÓC NHÌN CAMERA", Color3.fromRGB(200, 200, 255))
-local ac = NewBtn("KHÓA VÀO GÓC ĐÃ GHI", Color3.fromRGB(150, 255, 150))
-local rc = NewBtn("RESET TẤT CẢ (MẶC ĐỊNH)", Color3.fromRGB(255, 100, 100))
+local btnResetTele = NewBtn("RESET TỌA ĐỘ VỀ MẶC ĐỊNH", Color3.fromRGB(255, 100, 100))
 
--- --- LOGIC VẬN HÀNH ---
+local lc = NewLbl(Data.Cam and "Cam: Đã lưu góc treo ✅" or "Cam: Trống")
+local gc = NewBtn("GHI GÓC NHÌN HIỆN TẠI", Color3.fromRGB(150, 150, 255))
+local ac = NewBtn("KHÓA GÓC ĐỂ TREO MÁY", Color3.fromRGB(255, 255, 150))
+local btnResetCam = NewBtn("MỞ KHÓA CAMERA (MẶC ĐỊNH)", Color3.fromRGB(255, 150, 50))
+
+-- --- LOGIC ---
 g1.MouseButton1Click:Connect(function()
     local p = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
     Data.P1 = {math.floor(p.X), math.floor(p.Y), math.floor(p.Z)}
-    l1.Text = "Vị trí 1: "..table.concat(Data.P1, ", "); Save()
-    g1.Text = "ĐÃ LƯU P1 ✅" task.wait(0.5) g1.Text = "GHI TỌA ĐỘ 1"
+    l1.Text = "P1: "..table.concat(Data.P1, ", "); Save()
 end)
 
 t1.MouseButton1Click:Connect(function() 
@@ -90,46 +96,48 @@ end)
 g2.MouseButton1Click:Connect(function()
     local p = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
     Data.P2 = {math.floor(p.X), math.floor(p.Y), math.floor(p.Z)}
-    l2.Text = "Vị trí 2: "..table.concat(Data.P2, ", "); Save()
-    g2.Text = "ĐÃ LƯU P2 ✅" task.wait(0.5) g2.Text = "GHI TỌA ĐỘ 2"
+    l2.Text = "P2: "..table.concat(Data.P2, ", "); Save()
 end)
 
 t2.MouseButton1Click:Connect(function() 
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(unpack(Data.P2)) 
 end)
 
+-- RESET TELE RIÊNG
+btnResetTele.MouseButton1Click:Connect(function()
+    Data.P1 = {-370, -250, 310}
+    Data.P2 = {0, 0, 0}
+    l1.Text = "P1: Default"; l2.Text = "P2: 0,0,0"; Save()
+end)
+
+-- CAMERA LOGIC
 gc.MouseButton1Click:Connect(function()
     Data.Cam = {workspace.CurrentCamera.CFrame:GetComponents()}
     Save(); lc.Text = "Cam: ĐÃ LƯU GÓC ✅"
 end)
 
-local locking = false
-local conn
+local isLock = false
+local camConn
 ac.MouseButton1Click:Connect(function()
-    if not Data.Cam then lc.Text = "LỖI: CHƯA GHI GÓC!" return end
-    locking = not locking
-    ac.Text = locking and "ĐANG KHÓA GÓC 🔒" or "KHÓA VÀO GÓC ĐÃ GHI"
-    if locking then
-        conn = game:GetService("RunService").RenderStepped:Connect(function()
-            workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
-            workspace.CurrentCamera.CFrame = CFrame.new(unpack(Data.Cam))
-        end)
-    else
-        if conn then conn:Disconnect() end
-        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-    end
+    if not Data.Cam then return end
+    isLock = true
+    ac.Text = "ĐANG KHÓA GÓC 🔒"
+    if camConn then camConn:Disconnect() end
+    camConn = game:GetService("RunService").RenderStepped:Connect(function()
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+        workspace.CurrentCamera.CFrame = CFrame.new(unpack(Data.Cam))
+    end)
 end)
 
-rc.MouseButton1Click:Connect(function()
-    if conn then conn:Disconnect() end
+-- MỞ KHÓA CAM (Về mặc định của Game)
+btnResetCam.MouseButton1Click:Connect(function()
+    isLock = false
+    ac.Text = "KHÓA GÓC ĐỂ TREO MÁY"
+    if camConn then camConn:Disconnect() end
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-    if isfile(FileName) then delfile(FileName) end
-    Data = {P1 = {-370, -250, 310}, P2 = {0,0,0}, Cam = nil}
-    l1.Text = "Vị trí 1: Default"; l2.Text = "Vị trí 2: 0,0,0"; lc.Text = "Cam: Trống"
-    print("Đã Reset sạch sẽ")
+    workspace.CurrentCamera.FieldOfView = 70
 end)
 
--- Nút tắt menu (X)
-local Close = NewBtn("ĐÓNG MENU (TẮT HẾT)", Color3.new(0,0,0))
-Close.TextColor3 = Color3.new(1,1,1)
-Close.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+local Exit = NewBtn("TẮT MENU", Color3.new(0,0,0))
+Exit.TextColor3 = Color3.new(1,1,1)
+Exit.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
