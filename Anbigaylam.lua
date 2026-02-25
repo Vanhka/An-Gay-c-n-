@@ -1,18 +1,22 @@
--- [[ SCRIPT: ĐỨC AN THÍCH GAY - V20 (ADVANCED CRAFT LOG) ]] --
+-- [[ SCRIPT: ĐỨC AN THÍCH GAY - V19 (FULL SETTINGS & SAVE) ]] --
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
-local TabHolder = Instance.new("Frame")
-local ContentHolder = Instance.new("Frame")
+local UIListLayout = Instance.new("UIListLayout")
+local Title = Instance.new("TextLabel")
 local ToggleBtn = Instance.new("TextButton")
 local HttpService = game:GetService("HttpService")
 
--- --- CẤU HÌNH MẶC ĐỊNH ---
-local FileName = "DucAnThichGay_V20.json"
+-- --- THÔNG SỐ MẶC ĐỊNH (PHẦN TÍM) ---
+local DefaultP1 = {-370, -250, 310} 
+local DefaultCam = {65, 20, -60} -- Cao, Lệch, Nghiêng
+
+-- FILE LƯU TRỮ VĨNH VIỄN
+local FileName = "DucAnThichGay_V19.json"
 local Data = {
-    P1 = {-370, -250, 310},
-    P2 = {0, 0, 0},
+    P1 = DefaultP1, 
+    P2 = {0, 0, 0}, 
     CustomCam = nil,
-    SavedCrafts = {} -- Danh sách các tên đã lưu
+    CraftName = "" -- Lưu lại cái tên bạn nhập
 }
 
 local function Save() writefile(FileName, HttpService:JSONEncode(Data)) end
@@ -23,12 +27,13 @@ local function Load()
 end
 Load()
 
--- --- GIAO DIỆN CHÍNH ---
+-- --- GIAO DIỆN CHUẨN ---
 ScreenGui.Parent = game:GetService("CoreGui")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.Size = UDim2.new(0, 260, 0, 450)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -225)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.Size = UDim2.new(0, 250, 0, 520) -- Cao hơn để đủ chỗ
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -260)
 MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame)
@@ -40,122 +45,112 @@ ToggleBtn.Size = UDim2.new(0, 35, 0, 35)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 ToggleBtn.Text = "V"
 ToggleBtn.TextColor3 = Color3.new(1,1,1)
-ToggleBtn.Position = UDim2.new(0.5, 135, 0.5, -225)
+ToggleBtn.Position = UDim2.new(0.5, 130, 0.5, -260)
 Instance.new("UICorner", ToggleBtn)
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- TAB SYSTEM
-TabHolder.Parent = MainFrame
-TabHolder.Size = UDim2.new(1, 0, 0, 40)
-local tL = Instance.new("UIListLayout", TabHolder)
-tL.FillDirection = "Horizontal"
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "ĐỨC AN THÍCH GAY 🌈"
+Title.TextColor3 = Color3.fromRGB(255, 50, 50)
+Title.Font = "SourceSansBold"
+Title.TextSize = 18
 
-ContentHolder.Parent = MainFrame
-ContentHolder.Position = UDim2.new(0, 0, 0, 40)
-ContentHolder.Size = UDim2.new(1, 0, 1, -40)
+UIListLayout.Parent = MainFrame
+UIListLayout.HorizontalAlignment = "Center"
+UIListLayout.Padding = UDim.new(0, 6)
+Instance.new("UIPadding", MainFrame).PaddingTop = UDim.new(0, 45)
 
-local MainTab = Instance.new("ScrollingFrame", ContentHolder)
-MainTab.Size = UDim2.new(1, 0, 1, 0)
-MainTab.BackgroundTransparency = 1
-MainTab.Visible = true
-Instance.new("UIListLayout", MainTab).HorizontalAlignment = "Center"
-
-local CraftTab = Instance.new("ScrollingFrame", ContentHolder)
-CraftTab.Size = UDim2.new(1, 0, 1, 0)
-CraftTab.BackgroundTransparency = 1
-CraftTab.Visible = false
-Instance.new("UIListLayout", CraftTab).HorizontalAlignment = "Center"
-
-local function NewTabBtn(txt)
-    local b = Instance.new("TextButton", TabHolder)
-    b.Size = UDim2.new(0.5, 0, 1, 0)
-    b.Text = txt
-    b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = "SourceSansBold"
-    return b
-end
-
-local btnM = NewTabBtn("MAIN")
-local btnC = NewTabBtn("CRAFT / LƯU")
-
-btnM.MouseButton1Click:Connect(function() MainTab.Visible = true; CraftTab.Visible = false end)
-btnC.MouseButton1Click:Connect(function() MainTab.Visible = false; CraftTab.Visible = true end)
-
-local function NewBtn(txt, parent, col)
-    local b = Instance.new("TextButton", parent)
-    b.Size = UDim2.new(0.9, 0, 0, 32)
+local function NewBtn(txt, col)
+    local b = Instance.new("TextButton", MainFrame)
+    b.Size = UDim2.new(0.9, 0, 0, 30)
     b.BackgroundColor3 = col or Color3.new(1,1,1)
     b.Text = txt
     b.Font = "SourceSansBold"
+    b.TextSize = 13
     Instance.new("UICorner", b)
-    local p = Instance.new("UIPadding", parent); p.PaddingTop = UDim.new(0,10)
     return b
 end
 
--- --- [TAB MAIN] ---
-NewBtn("TELEPORT VỊ TRÍ 1", MainTab).MouseButton1Click:Connect(function()
+local function NewLbl(txt)
+    local l = Instance.new("TextLabel", MainFrame)
+    l.Size = UDim2.new(0.9, 0, 0, 15)
+    l.BackgroundTransparency = 1
+    l.Text = txt
+    l.TextColor3 = Color3.fromRGB(180, 150, 255) -- Màu tím nhẹ
+    l.TextSize = 10
+    l.Font = "SourceSansItalic"
+    return l
+end
+
+-- --- PHẦN XANH LÁ (CHỨC NĂNG) & PHẦN TÍM (THÔNG SỐ) ---
+
+-- Tele 1
+local infoP1 = NewLbl("X: "..Data.P1[1].." Y: "..Data.P1[2].." Z: "..Data.P1[3])
+NewBtn("TELEPORT VỊ TRÍ 1", Color3.new(1,1,1)).MouseButton1Click:Connect(function()
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(unpack(Data.P1))
 end)
-NewBtn("An Bị Gay thật - Camera", MainTab).MouseButton1Click:Connect(function()
+NewBtn("Ghi Đè Tọa Độ 1", Color3.fromRGB(150, 255, 150)).MouseButton1Click:Connect(function()
+    local p = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+    Data.P1 = {math.floor(p.X), math.floor(p.Y), math.floor(p.Z)}
+    infoP1.Text = "X: "..Data.P1[1].." Y: "..Data.P1[2].." Z: "..Data.P1[3]; Save()
+end)
+
+-- Tele 2
+local infoP2 = NewLbl("X: "..Data.P2[1].." Y: "..Data.P2[2].." Z: "..Data.P2[3])
+NewBtn("TELEPORT VỊ TRÍ 2", Color3.new(1,1,1)).MouseButton1Click:Connect(function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(unpack(Data.P2))
+end)
+NewBtn("Ghi Đè Tọa Độ 2", Color3.fromRGB(150, 255, 150)).MouseButton1Click:Connect(function()
+    local p = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+    Data.P2 = {math.floor(p.X), math.floor(p.Y), math.floor(p.Z)}
+    infoP2.Text = "X: "..Data.P2[1].." Y: "..Data.P2[2].." Z: "..Data.P2[3]; Save()
+end)
+
+-- Camera
+local infoCam = NewLbl("Góc: "..DefaultCam[1]..", "..DefaultCam[2]..", "..DefaultCam[3])
+NewBtn("An Bị Gay thật - Camera", Color3.new(1,1,1)).MouseButton1Click:Connect(function()
     if _G.L then _G.L:Disconnect() end
     _G.L = game:GetService("RunService").RenderStepped:Connect(function()
         workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
         local p = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-        workspace.CurrentCamera.CFrame = CFrame.new(p + Vector3.new(0, 65, 20)) * CFrame.Angles(math.rad(-60), 0, 0)
+        workspace.CurrentCamera.CFrame = CFrame.new(p + Vector3.new(0, DefaultCam[1], DefaultCam[2])) * CFrame.Angles(math.rad(DefaultCam[3]), 0, 0)
     end)
 end)
-NewBtn("MỞ KHÓA CAMERA", MainTab, Color3.fromRGB(255, 160, 50)).MouseButton1Click:Connect(function()
+
+NewBtn("Ghi Góc Cam Tùy Chỉnh", Color3.fromRGB(150, 150, 255)).MouseButton1Click:Connect(function()
+    Data.CustomCam = {workspace.CurrentCamera.CFrame:GetComponents()}; Save()
+end)
+
+NewBtn("Khóa Góc Cam Đã Ghi", Color3.fromRGB(200, 200, 255)).MouseButton1Click:Connect(function()
+    if not Data.CustomCam then return end
+    if _G.L then _G.L:Disconnect() end
+    _G.L = game:GetService("RunService").RenderStepped:Connect(function()
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+        workspace.CurrentCamera.CFrame = CFrame.new(unpack(Data.CustomCam))
+    end)
+end)
+
+NewBtn("MỞ KHÓA CAMERA", Color3.fromRGB(255, 160, 50)).MouseButton1Click:Connect(function()
     if _G.L then _G.L:Disconnect() end
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end)
 
--- --- [TAB CRAFT - HỆ THỐNG LƯU TÊN] ---
-local craftInput = Instance.new("TextBox", CraftTab)
-craftInput.Size = UDim2.new(0.9, 0, 0, 35)
-craftInput.PlaceholderText = "Nhập tên cần lưu..."
-craftInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+-- --- PHẦN CRAFT (LƯU TÊN) ---
+local craftInput = Instance.new("TextBox", MainFrame)
+craftInput.Size = UDim2.new(0.9, 0, 0, 30)
+craftInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 craftInput.TextColor3 = Color3.new(1,1,1)
+craftInput.PlaceholderText = "Đặt tên để lưu lại..."
+craftInput.Text = Data.CraftName
 Instance.new("UICorner", craftInput)
 
-local listFrame = Instance.new("Frame", CraftTab)
-listFrame.Size = UDim2.new(0.9, 0, 0, 200)
-listFrame.BackgroundTransparency = 1
-local listLayout = Instance.new("UIListLayout", listFrame)
-listLayout.Padding = UDim.new(0, 5)
-
-local function UpdateList()
-    for _, child in pairs(listFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for i, name in pairs(Data.SavedCrafts) do
-        local b = Instance.new("TextButton", listFrame)
-        b.Size = UDim2.new(1, 0, 0, 25)
-        b.Text = "⭐ " .. name
-        b.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        b.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", b)
-        
-        -- Bấm vào tên để chọn lại (hiện lên ô nhập)
-        b.MouseButton1Click:Connect(function()
-            craftInput.Text = name
-        end)
-    end
-end
-
-NewBtn("BẤM ĐỂ LƯU TÊN", CraftTab, Color3.fromRGB(150, 255, 150)).MouseButton1Click:Connect(function()
-    if craftInput.Text ~= "" then
-        table.insert(Data.SavedCrafts, craftInput.Text)
-        Save()
-        UpdateList()
-        craftInput.Text = ""
-    end
-end)
-
-NewBtn("XÓA TẤT CẢ TÊN", CraftTab, Color3.fromRGB(255, 100, 100)).MouseButton1Click:Connect(function()
-    Data.SavedCrafts = {}
+craftInput.FocusLost:Connect(function()
+    Data.CraftName = craftInput.Text
     Save()
-    UpdateList()
 end)
 
-UpdateList() -- Load danh sách khi bật script
+NewBtn("RESET VỀ MẶC ĐỊNH CODE", Color3.fromRGB(255, 100, 100)).MouseButton1Click:Connect(function()
+    Data.P1 = DefaultP1; Data.P2 = {0,0,0}; Data.CustomCam = nil; Data.CraftName = ""
+    craftInput.Text = ""; infoP1.Text = "X: -370 Y: -250 Z: 310"; Save()
+end)
