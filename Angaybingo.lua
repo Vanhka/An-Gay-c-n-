@@ -5,18 +5,17 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 -- ==========================================================
--- THIẾT LẬP: AN GAY SCRIPT (DÀNH CHO NUKE TYCOON)
+-- SCRIPT AN GAY: BẢN PRO (KHÓA CHẶT 100%, CHỐNG LỖI BÀN PHÍM)
 -- ==========================================================
 local TARGET_GAME_ID = 7920018625 
 local FILE_NAME = "AnGay_CCTV_Data.json"
 
--- 1. THÔNG BÁO FAKE BAN (CHỈ HIỆN KHI SAI GAME)
+-- 1. FAKE BAN (CHỈ HIỆN KHI SAI GAME)
 if game.PlaceId ~= TARGET_GAME_ID then
     local trollGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
     local bg = Instance.new("Frame", trollGui)
     bg.Size = UDim2.new(1, 0, 1, 0)
     bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    
     local msg = Instance.new("TextLabel", bg)
     msg.Size = UDim2.new(1, 0, 0, 50)
     msg.Position = UDim2.new(0, 0, 0.5, -25)
@@ -24,13 +23,11 @@ if game.PlaceId ~= TARGET_GAME_ID then
     msg.TextColor3 = Color3.new(1, 0, 0)
     msg.TextSize = 40
     msg.Font = Enum.Font.SourceSansBold
-    msg.Text = "You banned" -- Nội dung theo ý bạn
-    
-    warn("Wrong Game! You banned.")
+    msg.Text = "You banned"
     return 
 end
 
--- 2. DỮ LIỆU CAMERA & AUTO-SAVE
+-- 2. DỮ LIỆU & AUTO-SAVE
 local cameraList = {}
 local currentCamIndex = 0 
 
@@ -54,7 +51,7 @@ LoadCams()
 
 -- 3. GIAO DIỆN MENU "AN GAY"
 local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.Name = "An_Gay_CCTV"
+screenGui.Name = "An_Gay_CCTV_Pro"
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", screenGui)
@@ -75,10 +72,11 @@ minBtn.TextColor3 = Color3.new(1, 1, 1)
 minBtn.ZIndex = 10
 minBtn.Visible = false
 
-local choiceF = Instance.new("Frame", mainFrame) choiceF.Size = UDim2.new(1,0,1,0) choiceF.BackgroundTransparency = 1
-local userF = Instance.new("Frame", mainFrame) userF.Size = UDim2.new(1,0,1,0) userF.BackgroundTransparency = 1 userF.Visible = false
-local adminF = Instance.new("Frame", mainFrame) adminF.Size = UDim2.new(1,0,1,0) adminF.BackgroundTransparency = 1 adminF.Visible = false
-local contentF = Instance.new("Frame", mainFrame) contentF.Size = UDim2.new(1,0,1,0) contentF.BackgroundTransparency = 1 contentF.Visible = false
+-- THIẾT LẬP KHÓA CHẶT LAYER (Không bao giờ bị đè)
+local choiceF = Instance.new("Frame", mainFrame) choiceF.Size = UDim2.new(1,0,1,0); choiceF.BackgroundTransparency = 1; choiceF.Visible = true
+local userF = Instance.new("Frame", mainFrame) userF.Size = UDim2.new(1,0,1,0); userF.BackgroundTransparency = 1; userF.Visible = false
+local adminF = Instance.new("Frame", mainFrame) adminF.Size = UDim2.new(1,0,1,0); adminF.BackgroundTransparency = 1; adminF.Visible = false
+local contentF = Instance.new("Frame", mainFrame) contentF.Size = UDim2.new(1,0,1,0); contentF.BackgroundTransparency = 1; contentF.Visible = false
 
 local function addBack(p, t)
     local b = Instance.new("TextButton", p)
@@ -88,27 +86,68 @@ local function addBack(p, t)
 end
 addBack(userF, choiceF) addBack(adminF, choiceF)
 
--- LỰA CHỌN
+-- MENU CHỌN USER / ADMIN
 local bUser = Instance.new("TextButton", choiceF)
-bUser.Size = UDim2.new(0, 200, 0, 45) bUser.Position = UDim2.new(0.5, -100, 0, 80)
+bUser.Size = UDim2.new(0, 200, 0, 45) bUser.Position = UDim2.new(0.5, -100, 0, 100)
 bUser.Text = "USER ACCESS" bUser.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
 bUser.MouseButton1Click:Connect(function() choiceF.Visible = false userF.Visible = true end)
 
 local bAdmin = Instance.new("TextButton", choiceF)
-bAdmin.Size = UDim2.new(0, 200, 0, 45) bAdmin.Position = UDim2.new(0.5, -100, 0, 140)
+bAdmin.Size = UDim2.new(0, 200, 0, 45) bAdmin.Position = UDim2.new(0.5, -100, 0, 160)
 bAdmin.Text = "ADMIN ACCESS" bAdmin.BackgroundColor3 = Color3.fromRGB(100, 0, 150)
 bAdmin.MouseButton1Click:Connect(function() choiceF.Visible = false adminF.Visible = true end)
 
--- MK LOGIN
-local uIn = Instance.new("TextBox", userF) uIn.Size = UDim2.new(0, 180, 0, 30) uIn.Position = UDim2.new(0.5, -90, 0, 60) uIn.PlaceholderText = "MK: anbigay"
-local bUok = Instance.new("TextButton", userF) bUok.Size = UDim2.new(0, 180, 0, 35) bUok.Position = UDim2.new(0.5, -90, 0, 100) bUok.Text = "tuidongtinh" bUok.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-bUok.MouseButton1Click:Connect(function() if uIn.Text:lower() == "anbigay" then userF.Visible = false contentF.Visible = true minBtn.Visible = true end end)
+-- --- KHU VỰC NHẬP MẬT KHẨU USER ---
+local uIn = Instance.new("TextBox", userF) 
+uIn.Size = UDim2.new(0, 180, 0, 35) 
+uIn.Position = UDim2.new(0.5, -90, 0, 90) 
+uIn.PlaceholderText = "Nhập MK User..."
+uIn.Text = "" 
+uIn.ClearTextOnFocus = false -- Không tự xóa khi bấm vào
 
-local aIn = Instance.new("TextBox", adminF) aIn.Size = UDim2.new(0, 180, 0, 30) aIn.Position = UDim2.new(0.5, -90, 0, 80) aIn.PlaceholderText = "Admin: AKA777aka"
-local bAok = Instance.new("TextButton", adminF) bAok.Size = UDim2.new(0, 180, 0, 35) bAok.Position = UDim2.new(0.5, -90, 0, 120) bAok.Text = "XÁC NHẬN" bAok.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
-bAok.MouseButton1Click:Connect(function() if aIn.Text == "AKA777aka" then adminF.Visible = false contentF.Visible = true minBtn.Visible = true end end)
+local bUok = Instance.new("TextButton", userF) 
+bUok.Size = UDim2.new(0, 180, 0, 40) 
+bUok.Position = UDim2.new(0.5, -90, 0, 140) 
+bUok.Text = "XÁC NHẬN" 
+bUok.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+bUok.MouseButton1Click:Connect(function() 
+    -- Tự động xóa mọi khoảng trắng dư thừa
+    local pw = uIn.Text:gsub("%s+", "") 
+    if pw == "anbigay" then 
+        userF.Visible = false 
+        contentF.Visible = true 
+        minBtn.Visible = true 
+    else 
+        bUok.Text = "SAI MK!" task.wait(0.8) bUok.Text = "XÁC NHẬN" 
+    end 
+end)
 
--- CCTV
+-- --- KHU VỰC NHẬP MẬT KHẨU ADMIN ---
+local aIn = Instance.new("TextBox", adminF) 
+aIn.Size = UDim2.new(0, 180, 0, 35) 
+aIn.Position = UDim2.new(0.5, -90, 0, 90) 
+aIn.PlaceholderText = "Nhập MK Admin..."
+aIn.Text = "" 
+aIn.ClearTextOnFocus = false -- Không tự xóa khi bấm vào
+
+local bAok = Instance.new("TextButton", adminF) 
+bAok.Size = UDim2.new(0, 180, 0, 40) 
+bAok.Position = UDim2.new(0.5, -90, 0, 140) 
+bAok.Text = "XÁC NHẬN" 
+bAok.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+bAok.MouseButton1Click:Connect(function() 
+    -- Tự động xóa mọi khoảng trắng dư thừa
+    local pw = aIn.Text:gsub("%s+", "") 
+    if pw == "AKA777aka" then 
+        adminF.Visible = false 
+        contentF.Visible = true 
+        minBtn.Visible = true 
+    else
+        bAok.Text = "SAI MK!" task.wait(0.8) bAok.Text = "XÁC NHẬN"
+    end 
+end)
+
+-- --- MENU CCTV CHÍNH ---
 local function upCam()
     if currentCamIndex == 0 then camera.CameraType = Enum.CameraType.Custom return "Tự do"
     else camera.CameraType = Enum.CameraType.Scriptable camera.CFrame = cameraList[currentCamIndex] return "Cam: "..currentCamIndex end
@@ -126,7 +165,7 @@ bDel.MouseButton1Click:Connect(function() if currentCamIndex > 0 then table.remo
 local ctrl = Instance.new("Frame", contentF) ctrl.Size = UDim2.new(0, 220, 0, 50) ctrl.Position = UDim2.new(0.5, -110, 0, 220) ctrl.BackgroundTransparency = 1
 local bP = Instance.new("TextButton", ctrl) bP.Size = UDim2.new(0, 50, 1, 0) bP.Text = "<"
 local bN = Instance.new("TextButton", ctrl) bN.Size = UDim2.new(0, 50, 1, 0) bN.Position = UDim2.new(1, -50, 0, 0) bN.Text = ">"
-local info = Instance.new("TextLabel", ctrl) info.Size = UDim2.new(1, -110, 1, 0) info.Position = UDim2.new(0, 55, 0, 0) info.Text = "An Gay CCTV: Tự do"
+local info = Instance.new("TextLabel", ctrl) info.Size = UDim2.new(1, -110, 1, 0) info.Position = UDim2.new(0, 55, 0, 0) info.TextColor3 = Color3.new(1,1,1); info.Text = "CCTV: Tự do"; info.BackgroundTransparency = 1
 
 bP.MouseButton1Click:Connect(function() if #cameraList > 0 then currentCamIndex = (currentCamIndex <= 1) and #cameraList or currentCamIndex - 1 info.Text = upCam() end end)
 bN.MouseButton1Click:Connect(function() if #cameraList > 0 then currentCamIndex = (currentCamIndex >= #cameraList) and 1 or currentCamIndex + 1 info.Text = upCam() end end)
