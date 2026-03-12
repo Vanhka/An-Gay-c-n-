@@ -27,12 +27,7 @@ _G.MoveSpeed = 5
 
 -- DANH SÁCH TÊN NÚT CHÍNH XÁC (TỪ HÌNH ẢNH CỦA KHA)
 local TargetNames = {
-    "Front Door",
-    "Rookie Armor",
     "ACS_NoDamage",
-    "UraniumButton",
-    "Dropper1",
-    "Wall1",
 }
 
 local noclipConnection
