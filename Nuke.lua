@@ -33,7 +33,6 @@ local TargetNames = {
     "UraniumButton",
     "Dropper1",
     "Wall1",
-    "Base Paths"
 }
 
 local noclipConnection
