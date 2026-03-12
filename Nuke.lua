@@ -2,9 +2,9 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local RunService = game:GetService("RunService")
 
 local Window = Rayfield:CreateWindow({
-   Name = "KHA PRO - ANTI-TANK LOGIC",
-   LoadingTitle = "Đang lọc vật thể gây nhầm lẫn...",
-   LoadingSubtitle = "Chỉ bay vào nút - Né bồn chứa",
+   Name = "KHA PRO - ANTI-DOOR & TANK",
+   LoadingTitle = "Đang thiết lập danh sách cấm...",
+   LoadingSubtitle = "Né Cửa Nhà & Bồn Chứa tuyệt đối",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
@@ -20,15 +20,21 @@ _G.BuildRest = 10
 _G.FlyHeight = 220     
 _G.MoveSpeed = 8      
 
--- DANH SÁCH TÊN NÚT CHUẨN (CẬP NHẬT TỪ HÌNH ẢNH)
+-- DANH SÁCH TÊN NÚT MUỐN BAY VÀO
 local TargetNames = {
-    "Front Door", 
     "Rookie Armor", 
     "ACS_NoDamage", 
     "UraniumButton", 
     "Dropper1", 
     "Wall1", 
     "Base Paths"
+}
+
+-- DANH SÁCH ĐEN (BLACKLIST) - NHỮNG THỨ TUYỆT ĐỐI KHÔNG BAY VÀO
+local BlacklistNames = {
+    "Front Door", -- Cái cửa nhà Kha nói đây
+    "Toggle", 
+    "Help"
 }
 
 local noclipConnection
@@ -56,23 +62,32 @@ local function toggleNoclip(state)
     end
 end
 
--- HÀM KIỂM TRA XEM CÓ PHẢI NÚT THẬT KHÔNG
-local function isRealButton(obj)
-    -- Nếu nó nằm trong bồn chứa (Tank) hoặc có kích thước quá lớn thì bỏ qua
-    if obj.Parent.Name:find("Tank") or obj.Name:find("Tank") or obj.Size.Y > 5 then
+-- HÀM KIỂM TRA THÔNG MINH
+local function isSafeTarget(obj)
+    -- 1. Kiểm tra danh sách đen
+    for _, blackName in ipairs(BlacklistNames) do
+        if obj.Name == blackName or obj.Parent.Name:find(blackName) then
+            return false
+        end
+    end
+    
+    -- 2. Né bồn chứa (Tank)
+    if obj.Name:find("Tank") or obj.Parent.Name:find("Tank") then
         return false
     end
-    -- Ưu tiên những thứ có BillboardGui (Bảng hiện tên/giá tiền)
-    if obj:FindFirstChildOfClass("BillboardGui") then
+    
+    -- 3. Chỉ nhận nút bấm thực sự (Có bảng tên hoặc thuộc Tycoon)
+    if obj:FindFirstChildOfClass("BillboardGui") or obj:IsA("BasePart") then
         return true
     end
+    
     return false
 end
 
 local function safeGlide(targetPos)
     local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
     
-    -- Bay lên cao trước để tránh va chạm
+    -- Bay vọt lên cao trước
     while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and (_G.AutoFarm or _G.AutoBuild) do
         hrp.Velocity = Vector3.new(0,0,0)
         hrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
@@ -121,7 +136,7 @@ task.spawn(function()
     end
 end)
 
--- VÒNG LẶP NÂNG CẤP (ĐÃ THÊM BỘ LỌC NÉ BỒN CHỨA)
+-- VÒNG LẶP NÂNG CẤP (ĐÃ CẬP NHẬT NÉ CỬA)
 task.spawn(function()
     while task.wait() do
         if _G.AutoBuild then
@@ -132,26 +147,21 @@ task.spawn(function()
                 while (tick() - buildStart < _G.BuildTime) and _G.AutoBuild do
                     local target = nil
                     
-                    -- Cách 1: Tìm theo danh sách tên chuẩn của Kha
+                    -- Tìm nút trong danh sách trắng (TargetNames) và phải "An toàn"
                     for _, name in ipairs(TargetNames) do
                         for _, obj in ipairs(myBase:GetDescendants()) do
-                            if obj.Name == name and obj:IsA("BasePart") and obj.Transparency < 1 and isRealButton(obj) then
+                            if obj.Name == name and obj:IsA("BasePart") and obj.Transparency < 1 and isSafeTarget(obj) then
                                 target = obj; break
                             end
                         end
                         if target then break end
                     end
 
-                    -- Cách 2: Nếu không thấy trong danh sách, tìm nút có bảng hiện chữ nhưng né Bồn chứa
-                    if not target then
-                        for _, obj in ipairs(myBase:GetDescendants()) do
-                            if obj:IsA("BasePart") and obj.Transparency == 0 and isRealButton(obj) then
-                                target = obj; break
-                            end
-                        end
+                    if target then 
+                        print("Đang bay tới nút: " .. target.Name)
+                        safeGlide(target.Position)
+                        task.wait(0.8) 
                     end
-
-                    if target then safeGlide(target.Position); task.wait(0.8) end
                     task.wait(0.5)
                 end
                 if not _G.UseNoclip then toggleNoclip(false) end
@@ -165,13 +175,11 @@ end)
 local MainTab = Window:CreateTab("Treo Máy", 4483362458)
 MainTab:CreateToggle({Name = "Bật Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
 MainTab:CreateToggle({Name = "Bật Auto Nâng Cấp", CurrentValue = false, Callback = function(v) _G.AutoBuild = v end})
-MainTab:CreateToggle({Name = "Noclip (Xuyên vật thể)", CurrentValue = false, Callback = function(v) _G.UseNoclip = v; toggleNoclip(v) end})
 
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
 ConfigTab:CreateInput({Name = "Thời gian khoan", PlaceholderText = "300", Callback = function(t) _G.WaitAtDrill = tonumber(t) or 300 end})
 ConfigTab:CreateInput({Name = "Thời gian đi nâng", PlaceholderText = "20", Callback = function(t) _G.BuildTime = tonumber(t) or 20 end})
 ConfigTab:CreateInput({Name = "Độ cao bay", PlaceholderText = "220", Callback = function(t) _G.FlyHeight = tonumber(t) or 220 end})
-ConfigTab:CreateInput({Name = "Tốc độ bay", PlaceholderText = "8", Callback = function(t) _G.MoveSpeed = tonumber(t) or 8 end})
 
 -- Anti-AFK
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
