@@ -2,21 +2,31 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "KHA PRO - ANTI-BASE GEMS",
-   LoadingTitle = "Đang khôi phục toàn bộ cài đặt...",
-   LoadingSubtitle = "Đầy đủ Slider thông số cho Kha",
+   LoadingTitle = "Đang nạp 6 Tọa độ & Slider...",
+   LoadingSubtitle = "Đã ghi nhận toàn bộ cài đặt",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
--- BIẾN CÀI ĐẶT GỐC
+-- BIẾN CÀI ĐẶT (GHI THÔNG SỐ)
 _G.AutoFarm = false   
 _G.AutoGems = false
-_G.WaitAtDrill = 300   -- Thời gian ở lại khoan
-_G.GemsRest = 2        -- Thời gian nghỉ lụm gems
-_G.FlyHeight = 225     -- Độ cao bay
-_G.DrillSpeed = 8      -- Tốc độ bay đi khoan
-_G.GemsSpeed = 20      -- Tốc độ bay săn gems
+_G.WaitAtDrill = 300   
+_G.GemsRest = 2        
+_G.FlyHeight = 225     
+_G.DrillSpeed = 8      
+_G.GemsSpeed = 20      
 
--- HÀM LỌC CHÍNH XÁC (BỎ ROB BASE)
+-- 6 TỌA ĐỘ TELE CỦA KHA (VẪN CÒN NGUYÊN)
+local BasePositions = {
+    Vector3.new(-26.0, 147.8, -616.7),
+    Vector3.new(509.3, 147.7, 370.1),
+    Vector3.new(-8.8, 147.7, 1379.9),
+    Vector3.new(-1121.4, 147.7, 1756.2),
+    Vector3.new(-2013.4, 147.7, 513.3),
+    Vector3.new(-1368.7, 147.7, -557.8)
+}
+
+-- HÀM LỌC GEMS THẬT
 local function checkRealGem(obj)
     local text = (obj.ObjectText .. obj.ActionText):lower()
     local pName = obj.Parent.Name:lower()
@@ -26,26 +36,18 @@ local function checkRealGem(obj)
     return false
 end
 
-local function getMyBase()
-    local tycoons = workspace:FindFirstChild("The Nuke Tycoon Entirely Model") and workspace["The Nuke Tycoon Entirely Model"]:FindFirstChild("Tycoons")
-    if tycoons then
-        for _, b in ipairs(tycoons:GetChildren()) do
-            local ownerValue = b:FindFirstChild("Owner")
-            if ownerValue and (ownerValue.Value == game.Players.LocalPlayer or ownerValue.Value == game.Players.LocalPlayer.Name) then return b end
-        end
-    end
-    return nil
-end
-
+-- HÀM BAY LƯỚT (SAFE GLIDE)
 local function safeGlide(targetPos, speed)
     local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    -- Bay lên độ cao đã Ghi
     while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and (_G.AutoFarm or _G.AutoGems) do
         hrp.Velocity = Vector3.new(0,0,0)
         hrp.CFrame = hrp.CFrame + Vector3.new(0, 8, 0)
         task.wait()
         if hrp.Position.Y > _G.FlyHeight then break end
     end
+    -- Lướt tới tọa độ
     local dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
     while dist > 4 and (_G.AutoFarm or _G.AutoGems) do
         local direction = (Vector3.new(targetPos.X, _G.FlyHeight, targetPos.Z) - hrp.Position).Unit
@@ -61,21 +63,29 @@ local function safeGlide(targetPos, speed)
     end
 end
 
--- VÒNG LẶP TREO MÁY
+-- VÒNG LẶP TREO MÁY TUẦN TRA 6 BASE
 task.spawn(function()
     while task.wait(0.5) do
-        local targetGem = nil
         if _G.AutoGems then
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("ProximityPrompt") and checkRealGem(obj) then targetGem = obj.Parent break end
+            -- Tele lần lượt qua 6 tọa độ để săn Gems
+            for i = 1, 6 do
+                if not _G.AutoGems then break end
+                safeGlide(BasePositions[i], _G.GemsSpeed)
+                task.wait(_G.GemsRest) -- Ghi thời gian đứng lại lụm gems
             end
-        end
-        if targetGem then
-            safeGlide(targetGem.Position, _G.GemsSpeed)
-            fireproximityprompt(targetGem:FindFirstChildOfClass("ProximityPrompt"), 1, true)
-            task.wait(_G.GemsRest)
         elseif _G.AutoFarm then
-            local myBase = getMyBase()
+            -- Logic Auto Khoan của Kha
+            local myBase = (function()
+                local tycoons = workspace:FindFirstChild("The Nuke Tycoon Entirely Model") and workspace["The Nuke Tycoon Entirely Model"]:FindFirstChild("Tycoons")
+                if tycoons then
+                    for _, b in ipairs(tycoons:GetChildren()) do
+                        local o = b:FindFirstChild("Owner")
+                        if o and (o.Value == game.Players.LocalPlayer or o.Value == game.Players.LocalPlayer.Name) then return b end
+                    end
+                end
+                return nil
+            end)()
+            
             if myBase then
                 local drill = myBase.PurchasedObjects:FindFirstChild("RockStart") and myBase.PurchasedObjects.RockStart:FindFirstChild("manual_drill")
                 local giver = myBase.Essentials:FindFirstChild("Giver")
@@ -98,7 +108,7 @@ local MainTab = Window:CreateTab("Treo Máy", 4483362458)
 MainTab:CreateToggle({Name = "Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
 MainTab:CreateToggle({Name = "Săn Gems (Đã lọc Base)", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
 
--- GIAO DIỆN TAB CÀI ĐẶT (PHỤC HỒI TẤT CẢ SLIDER)
+-- GIAO DIỆN TAB CÀI ĐẶT (GHI THÔNG SỐ)
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
 
 ConfigTab:CreateSlider({Name = "Tốc độ bay Săn GEMS", Range = {1, 50}, Increment = 1, CurrentValue = 20, Callback = function(v) _G.GemsSpeed = v end})
