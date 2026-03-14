@@ -1,9 +1,9 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "KHA PRO - MASTER V4",
-   LoadingTitle = "Đang chặn nút Rob Base 123456...",
-   LoadingSubtitle = "Ưu tiên lụm Gems tuyệt đối",
+   Name = "KHA PRO - GEMS FIX",
+   LoadingTitle = "Đang nhắm mục tiêu Gems xịn...",
+   LoadingSubtitle = "Lọc chuẩn Rob The Base's Gems!",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
@@ -14,23 +14,22 @@ _G.WaitAtDrill = 300
 _G.GemsRest = 2        
 _G.FlyHeight = 225     
 _G.DrillSpeed = 8      
-_G.GemsSpeed = 18      
+_G.GemsSpeed = 22      -- Tăng tốc độ để cướp cho nhanh
 
--- HÀM KIỂM TRA NÚT (NÉ ROB BASE 1-6)
-local function isLegitGem(obj)
-    local pText = (obj.ObjectText .. obj.ActionText):lower()
+-- HÀM LỌC NÚT CHUẨN THEO YÊU CẦU CỦA KHA
+local function isRealGem(obj)
+    local text = obj.ObjectText .. " " .. obj.ActionText
     
-    -- 1. Nếu thấy chữ "gem" thì mới xét tiếp
-    if pText:find("gem") then
-        -- 2. Kiểm tra danh sách đen: né "rob base", "base", và các số 1,2,3,4,5,6 đi kèm base
-        local blackList = {"rob base", "base 1", "base 2", "base 3", "base 4", "base 5", "base 6"}
-        for _, word in ipairs(blackList) do
-            if pText:find(word) then
-                return false -- Thấy tên trong blacklist là loại ngay
-            end
-        end
-        return true -- Không dính blacklist thì là Gems xịn
+    -- ƯU TIÊN 1: Phải khớp đúng dòng chữ Kha báo
+    if text:find("Rob The Base's Gems!") then
+        return true
     end
+    
+    -- ƯU TIÊN 2: Kiểm tra các biến thể Gems khác nhưng né Rob Base 1-6
+    if text:lower():find("gems") and not text:lower():find("rob base %d") then
+        return true
+    end
+    
     return false
 end
 
@@ -79,11 +78,9 @@ task.spawn(function()
         local targetGem = nil
         if _G.AutoGems then
             for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("ProximityPrompt") then
-                    if isLegitGem(obj) then
-                        targetGem = obj.Parent
-                        break 
-                    end
+                if obj:IsA("ProximityPrompt") and isRealGem(obj) then
+                    targetGem = obj.Parent
+                    break 
                 end
             end
         end
@@ -104,7 +101,7 @@ task.spawn(function()
                         if _G.AutoGems then
                             local qCheck = nil
                             for _, o in ipairs(workspace:GetDescendants()) do
-                                if o:IsA("ProximityPrompt") and isLegitGem(o) then
+                                if o:IsA("ProximityPrompt") and isRealGem(o) then
                                     qCheck = o.Parent break
                                 end
                             end
@@ -122,15 +119,10 @@ end)
 
 local MainTab = Window:CreateTab("Treo Máy", 4483362458)
 MainTab:CreateToggle({Name = "Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
-MainTab:CreateToggle({Name = "Auto Gems (Né Base 1-6)", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
+MainTab:CreateToggle({Name = "Săn Gems (Đã Fix Tên)", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
 
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
-ConfigTab:CreateSlider({Name = "Tốc độ săn GEMS", Range = {1, 30}, Increment = 1, CurrentValue = 18, Callback = function(v) _G.GemsSpeed = v end})
-ConfigTab:CreateSlider({Name = "Tốc độ đi KHOAN", Range = {1, 20}, Increment = 1, CurrentValue = 8, Callback = function(v) _G.DrillSpeed = v end})
-ConfigTab:CreateInput({Name = "Nghỉ sau khi lụm Gems (s)", PlaceholderText = "2", Callback = function(t) _G.GemsRest = tonumber(t) or 2 end})
+ConfigTab:CreateSlider({Name = "Tốc độ săn GEMS", Range = {1, 40}, Increment = 1, CurrentValue = 22, Callback = function(v) _G.GemsSpeed = v end})
+ConfigTab:CreateInput({Name = "Nghỉ sau khi lụm (s)", PlaceholderText = "2", Callback = function(t) _G.GemsRest = tonumber(t) or 2 end})
 
--- Anti-AFK
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
-    game:GetService("VirtualUser"):CaptureController()
-    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
-end)
+Rayfield:Notify({Title = "KHA PRO", Content = "Đã cập nhật bộ lọc 'Rob The Base's Gems!'", Duration = 5})
