@@ -2,8 +2,8 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "KHA PRO - ANTI-BASE GEMS",
-   LoadingTitle = "Đang đổi sang chế độ Nhập Số...",
-   LoadingSubtitle = "Đã thay thế thanh kéo bằng ô nhập",
+   LoadingTitle = "Đang tải hệ thống...",
+   LoadingSubtitle = "Đã sửa lỗi hạ cánh & Lưu thông số",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
@@ -36,17 +36,20 @@ local function checkRealGem(obj)
     return false
 end
 
--- LOGIC DI CHUYỂN
+-- LOGIC DI CHUYỂN (ĐÃ SỬA LỖI HẠ CÁNH)
 local function safeGlide(targetPos, speed)
     local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     
+    -- Bay lên độ cao an toàn
     while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and (_G.AutoFarm or _G.AutoGems) do
         hrp.Velocity = Vector3.new(0,0,0)
         hrp.CFrame = hrp.CFrame + Vector3.new(0, 8, 0)
         task.wait()
+        if hrp.Position.Y > _G.FlyHeight then break end
     end
     
+    -- Lướt tới tọa độ
     local dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
     while dist > 4 and (_G.AutoFarm or _G.AutoGems) do
         local direction = (Vector3.new(targetPos.X, _G.FlyHeight, targetPos.Z) - hrp.Position).Unit
@@ -54,6 +57,13 @@ local function safeGlide(targetPos, speed)
         hrp.CFrame = hrp.CFrame + (direction * speed)
         dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
         task.wait()
+    end
+    
+    -- HẠ CÁNH XUỐNG ĐẤT ĐỂ LỤM GEMS (Lỗi bản trước nằm ở đây)
+    if _G.AutoFarm or _G.AutoGems then
+        hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y - 1.5, targetPos.Z)
+        task.wait(0.2)
+        game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end
 
@@ -63,7 +73,21 @@ task.spawn(function()
         if _G.AutoGems then
             for i = 1, 6 do
                 if not _G.AutoGems then break end
+                
+                -- Bay tới và Hạ cánh xuống Base i
                 safeGlide(BasePositions[i], _G.GemsSpeed)
+                
+                -- LỤM GEMS XUNG QUANH TỌA ĐỘ
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") and checkRealGem(obj) then
+                        local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp and (hrp.Position - obj.Parent.Position).Magnitude <= 50 then
+                            fireproximityprompt(obj, 1, true)
+                        end
+                    end
+                end
+                
+                -- Đứng lại chờ (theo thời gian đã chỉnh trên Slider)
                 task.wait(_G.GemsRest) 
             end
         elseif _G.AutoFarm then
@@ -100,58 +124,17 @@ local MainTab = Window:CreateTab("Treo Máy", 4483362458)
 MainTab:CreateToggle({Name = "Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
 MainTab:CreateToggle({Name = "Săn Gems (Đã lọc Base)", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
 
--- GIAO DIỆN TAB CÀI ĐẶT (ĐÃ CHUYỂN THÀNH Ô NHẬP SỐ)
+-- GIAO DIỆN TAB CÀI ĐẶT (TRỞ VỀ SLIDER NHƯ TRONG ẢNH)
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
 
-ConfigTab:CreateInput({
-   Name = "Tốc độ bay Săn GEMS",
-   PlaceholderText = "Nhập số (Hiện tại: 20)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       local num = tonumber(Text)
-       if num then _G.GemsSpeed = num end
-   end,
-})
+ConfigTab:CreateSlider({Name = "Tốc độ bay đi KHOAN", Range = {1, 30}, Increment = 1, CurrentValue = 3, Callback = function(v) _G.DrillSpeed = v end})
+ConfigTab:CreateSlider({Name = "Độ cao bay (Fly Height)", Range = {100, 400}, Increment = 5, CurrentValue = 170, Callback = function(v) _G.FlyHeight = v end})
+ConfigTab:CreateSlider({Name = "Thời gian khoan (Giây)", Range = {10, 600}, Increment = 10, CurrentValue = 590, Callback = function(v) _G.WaitAtDrill = v end})
+ConfigTab:CreateSlider({Name = "Thời gian nghỉ lụm Gems", Range = {1, 30}, Increment = 1, CurrentValue = 10, Callback = function(v) _G.GemsRest = v end})
+ConfigTab:CreateSlider({Name = "Tốc độ bay Săn GEMS", Range = {1, 50}, Increment = 1, CurrentValue = 20, Callback = function(v) _G.GemsSpeed = v end})
 
-ConfigTab:CreateInput({
-   Name = "Tốc độ bay đi KHOAN",
-   PlaceholderText = "Nhập số (Hiện tại: 3)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       local num = tonumber(Text)
-       if num then _G.DrillSpeed = num end
-   end,
-})
-
-ConfigTab:CreateInput({
-   Name = "Độ cao bay (Fly Height)",
-   PlaceholderText = "Nhập số (Hiện tại: 170)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       local num = tonumber(Text)
-       if num then _G.FlyHeight = num end
-   end,
-})
-
-ConfigTab:CreateInput({
-   Name = "Thời gian khoan (Giây)",
-   PlaceholderText = "Nhập số (Hiện tại: 590)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       local num = tonumber(Text)
-       if num then _G.WaitAtDrill = num end
-   end,
-})
-
-ConfigTab:CreateInput({
-   Name = "Thời gian nghỉ lụm Gems",
-   PlaceholderText = "Nhập số (Hiện tại: 10)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       local num = tonumber(Text)
-       if num then _G.GemsRest = num end
-   end,
-})
+-- LỆNH LƯU/TẢI LẠI CẤU HÌNH (SẼ GHI NHỚ MỌI THỨ KHA CHỈNH)
+Rayfield:LoadConfiguration()
 
 -- Anti-AFK
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
