@@ -1,18 +1,21 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "KHA PRO - ONLY DRILL MODE",
-   LoadingTitle = "Đang khởi động chế độ khoan...",
-   LoadingSubtitle = "Tập trung khai thác tài nguyên",
+   Name = "KHA PRO - DRILL & GEMS V2",
+   LoadingTitle = "Đang tách tốc độ di chuyển...",
+   LoadingSubtitle = "Auto Khoan & Auto Lụm Gems",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
--- BIẾN CÀI ĐẶT (QUAY VỀ NHƯ CŨ)
+-- BIẾN CÀI ĐẶT
 _G.AutoFarm = false   
-_G.WaitAtDrill = 300   -- Thời gian đứng khoan
-_G.DrillRest = 2       -- Nghỉ sau khi khoan
+_G.AutoGems = false
+_G.WaitAtDrill = 300   
+_G.DrillRest = 2       
+_G.GemsRest = 5        
 _G.FlyHeight = 225     
-_G.MoveSpeed = 8      
+_G.DrillSpeed = 8      -- Tốc độ riêng khi đi khoan
+_G.GemsSpeed = 12      -- Tốc độ riêng khi đi lụm Gems (Nhanh hơn)
 
 local function getMyBase()
     for _, b in ipairs(workspace["The Nuke Tycoon Entirely Model"].Tycoons:GetChildren()) do
@@ -21,99 +24,99 @@ local function getMyBase()
     return nil
 end
 
--- HÀM BAY LƯỚT CHỈ DÙNG CHO KHOAN
-local function safeGlide(targetPos)
+-- HÀM BAY LƯỚT VỚI TỐC ĐỘ TÙY CHỈNH (SPEED_TYPE)
+local function safeGlide(targetPos, speed)
     local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
-    
-    -- Bay vọt lên trời tránh vật cản
-    while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and _G.AutoFarm do
+    -- Bay lên độ cao an toàn
+    while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and (_G.AutoFarm or _G.AutoGems) do
         hrp.Velocity = Vector3.new(0,0,0)
         hrp.CFrame = hrp.CFrame + Vector3.new(0, 6, 0)
         task.wait()
         if hrp.Position.Y > _G.FlyHeight then break end
     end
-
-    -- Lướt ngang tới máy khoan/giver
+    -- Lướt ngang với tốc độ được truyền vào
     local dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
-    while dist > 4 and _G.AutoFarm do
+    while dist > 4 and (_G.AutoFarm or _G.AutoGems) do
         local direction = (Vector3.new(targetPos.X, _G.FlyHeight, targetPos.Z) - hrp.Position).Unit
         hrp.Velocity = Vector3.new(0,0,0)
-        hrp.CFrame = hrp.CFrame + (direction * _G.MoveSpeed)
+        hrp.CFrame = hrp.CFrame + (direction * speed)
         dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
         task.wait()
     end
-    
-    -- Đáp xuống vị trí
-    if _G.AutoFarm then
+    -- Đáp xuống
+    if _G.AutoFarm or _G.AutoGems then
         hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y - 1.2, targetPos.Z)
         task.wait(0.3)
         game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end
 
--- VÒNG LẶP KHOAN NGUYÊN BẢN
+-- VÒNG LẶP CHÍNH
 task.spawn(function()
     while task.wait() do
-        if _G.AutoFarm then
-            local myBase = getMyBase()
-            if myBase then
-                local drill = myBase.PurchasedObjects:FindFirstChild("RockStart") and myBase.PurchasedObjects.RockStart:FindFirstChild("manual_drill")
-                local giver = myBase.Essentials:FindFirstChild("Giver")
-                
-                if drill and giver then
-                    -- 1. Đi tới máy khoan
-                    safeGlide(drill.Position)
-                    local drillStart = tick()
-                    
-                    -- 2. Đứng khoan theo thời gian cài đặt
-                    while (tick() - drillStart < _G.WaitAtDrill) and _G.AutoFarm do
-                        if drill:FindFirstChild("ProximityPrompt") then 
-                            fireproximityprompt(drill.ProximityPrompt, 1, true) 
-                        end
-                        task.wait(0.2)
-                    end
-                    
-                    task.wait(_G.DrillRest)
-                    
-                    -- 3. Đi lấy tiền
-                    if _G.AutoFarm then 
-                        safeGlide(giver.Position)
-                        task.wait(2) 
-                    end
+        local myBase = getMyBase()
+        if not myBase then task.wait(1) continue end
+
+        local gemTarget = nil
+        if _G.AutoGems then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") and (obj.ObjectText:find("Gems") or obj.ActionText:find("Rob")) then
+                    gemTarget = obj.Parent
+                    break
                 end
+            end
+        end
+
+        if gemTarget and _G.AutoGems then
+            -- Sử dụng tốc độ lụm Gems
+            safeGlide(gemTarget.Position, _G.GemsSpeed)
+            fireproximityprompt(gemTarget:FindFirstChildOfClass("ProximityPrompt"), 1, true)
+            task.wait(_G.GemsRest)
+        
+        elseif _G.AutoFarm then
+            local drill = myBase.PurchasedObjects:FindFirstChild("RockStart") and myBase.PurchasedObjects.RockStart:FindFirstChild("manual_drill")
+            local giver = myBase.Essentials:FindFirstChild("Giver")
+            
+            if drill and giver then
+                -- Sử dụng tốc độ đi khoan
+                safeGlide(drill.Position, _G.DrillSpeed)
+                local drillStart = tick()
+                
+                while (tick() - drillStart < _G.WaitAtDrill) and _G.AutoFarm do
+                    if _G.AutoGems then
+                        local quickCheck = nil
+                        for _, obj in ipairs(workspace:GetDescendants()) do
+                            if obj:IsA("ProximityPrompt") and (obj.ObjectText:find("Gems") or obj.ActionText:find("Rob")) then
+                                quickCheck = obj.Parent break
+                            end
+                        end
+                        if quickCheck then break end 
+                    end
+                    if drill:FindFirstChild("ProximityPrompt") then fireproximityprompt(drill.ProximityPrompt, 1, true) end
+                    task.wait(0.2)
+                end
+                
+                task.wait(_G.DrillRest)
+                if _G.AutoFarm then safeGlide(giver.Position, _G.DrillSpeed) task.wait(2) end
             end
         end
     end
 end)
 
--- GIAO DIỆN MENU (ĐÃ LƯỢC BỎ AUTO NÂNG)
+-- GIAO DIỆN
 local MainTab = Window:CreateTab("Treo Máy", 4483362458)
-
-MainTab:CreateToggle({
-    Name = "Bật Auto Khoan", 
-    CurrentValue = false, 
-    Callback = function(v) _G.AutoFarm = v end
-})
+MainTab:CreateToggle({Name = "Bật Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
+MainTab:CreateToggle({Name = "Bật Auto Lụm Gems", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
 
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
+ConfigTab:CreateSection("TỐC ĐỘ RIÊNG BIỆT")
+ConfigTab:CreateInput({Name = "Tốc độ đi KHOAN", PlaceholderText = "8", Callback = function(t) _G.DrillSpeed = tonumber(t) or 8 end})
+ConfigTab:CreateInput({Name = "Tốc độ lụm GEMS", PlaceholderText = "12", Callback = function(t) _G.GemsSpeed = tonumber(t) or 12 end})
 
-ConfigTab:CreateInput({
-    Name = "Thời gian đứng khoan (s)", 
-    PlaceholderText = "300", 
-    Callback = function(t) _G.WaitAtDrill = tonumber(t) or 300 end
-})
-
-ConfigTab:CreateInput({
-    Name = "Tốc độ bay", 
-    PlaceholderText = "8", 
-    Callback = function(t) _G.MoveSpeed = tonumber(t) or 8 end
-})
-
-ConfigTab:CreateInput({
-    Name = "Độ cao bay", 
-    PlaceholderText = "225", 
-    Callback = function(t) _G.FlyHeight = tonumber(t) or 225 end
-})
+ConfigTab:CreateSection("THÔNG SỐ KHÁC")
+ConfigTab:CreateInput({Name = "Độ cao bay", PlaceholderText = "225", Callback = function(t) _G.FlyHeight = tonumber(t) or 225 end})
+ConfigTab:CreateInput({Name = "Thời gian khoan (s)", PlaceholderText = "300", Callback = function(t) _G.WaitAtDrill = tonumber(t) or 300 end})
+ConfigTab:CreateInput({Name = "Nghỉ sau khi lụm Gems (s)", PlaceholderText = "5", Callback = function(t) _G.GemsRest = tonumber(t) or 5 end})
 
 -- Anti-AFK
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
