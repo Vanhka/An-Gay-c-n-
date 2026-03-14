@@ -2,21 +2,21 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "KHA PRO - ANTI-BASE GEMS",
-   LoadingTitle = "Đang nạp 6 Tọa độ & Slider...",
-   LoadingSubtitle = "Đã ghi nhận toàn bộ cài đặt",
+   LoadingTitle = "Đang đổi sang chế độ Nhập Số...",
+   LoadingSubtitle = "Đã thay thế thanh kéo bằng ô nhập",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
--- BIẾN CÀI ĐẶT (GHI THÔNG SỐ)
+-- BIẾN CÀI ĐẶT
 _G.AutoFarm = false   
 _G.AutoGems = false
-_G.WaitAtDrill = 300   
-_G.GemsRest = 2        
-_G.FlyHeight = 225     
-_G.DrillSpeed = 8      
+_G.WaitAtDrill = 590   
+_G.GemsRest = 10       
+_G.FlyHeight = 170     
+_G.DrillSpeed = 3      
 _G.GemsSpeed = 20      
 
--- 6 TỌA ĐỘ TELE CỦA KHA (VẪN CÒN NGUYÊN)
+-- 6 TỌA ĐỘ TELE CỦA KHA
 local BasePositions = {
     Vector3.new(-26.0, 147.8, -616.7),
     Vector3.new(509.3, 147.7, 370.1),
@@ -26,7 +26,7 @@ local BasePositions = {
     Vector3.new(-1368.7, 147.7, -557.8)
 }
 
--- HÀM LỌC GEMS THẬT
+-- HÀM LỌC GEMS (BỎ ROB BASE)
 local function checkRealGem(obj)
     local text = (obj.ObjectText .. obj.ActionText):lower()
     local pName = obj.Parent.Name:lower()
@@ -36,18 +36,17 @@ local function checkRealGem(obj)
     return false
 end
 
--- HÀM BAY LƯỚT (SAFE GLIDE)
+-- LOGIC DI CHUYỂN
 local function safeGlide(targetPos, speed)
     local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    -- Bay lên độ cao đã Ghi
+    
     while math.abs(hrp.Position.Y - _G.FlyHeight) > 3 and (_G.AutoFarm or _G.AutoGems) do
         hrp.Velocity = Vector3.new(0,0,0)
         hrp.CFrame = hrp.CFrame + Vector3.new(0, 8, 0)
         task.wait()
-        if hrp.Position.Y > _G.FlyHeight then break end
     end
-    -- Lướt tới tọa độ
+    
     local dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
     while dist > 4 and (_G.AutoFarm or _G.AutoGems) do
         local direction = (Vector3.new(targetPos.X, _G.FlyHeight, targetPos.Z) - hrp.Position).Unit
@@ -56,25 +55,18 @@ local function safeGlide(targetPos, speed)
         dist = (Vector2.new(hrp.Position.X, hrp.Position.Z) - Vector2.new(targetPos.X, targetPos.Z)).Magnitude
         task.wait()
     end
-    if _G.AutoFarm or _G.AutoGems then
-        hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y - 1.5, targetPos.Z)
-        task.wait(0.2)
-        game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
 end
 
--- VÒNG LẶP TREO MÁY TUẦN TRA 6 BASE
+-- VÒNG LẶP TREO MÁY
 task.spawn(function()
     while task.wait(0.5) do
         if _G.AutoGems then
-            -- Tele lần lượt qua 6 tọa độ để săn Gems
             for i = 1, 6 do
                 if not _G.AutoGems then break end
                 safeGlide(BasePositions[i], _G.GemsSpeed)
-                task.wait(_G.GemsRest) -- Ghi thời gian đứng lại lụm gems
+                task.wait(_G.GemsRest) 
             end
         elseif _G.AutoFarm then
-            -- Logic Auto Khoan của Kha
             local myBase = (function()
                 local tycoons = workspace:FindFirstChild("The Nuke Tycoon Entirely Model") and workspace["The Nuke Tycoon Entirely Model"]:FindFirstChild("Tycoons")
                 if tycoons then
@@ -108,14 +100,58 @@ local MainTab = Window:CreateTab("Treo Máy", 4483362458)
 MainTab:CreateToggle({Name = "Auto Khoan", CurrentValue = false, Callback = function(v) _G.AutoFarm = v end})
 MainTab:CreateToggle({Name = "Săn Gems (Đã lọc Base)", CurrentValue = false, Callback = function(v) _G.AutoGems = v end})
 
--- GIAO DIỆN TAB CÀI ĐẶT (GHI THÔNG SỐ)
+-- GIAO DIỆN TAB CÀI ĐẶT (ĐÃ CHUYỂN THÀNH Ô NHẬP SỐ)
 local ConfigTab = Window:CreateTab("Cài Đặt", 4483362458)
 
-ConfigTab:CreateSlider({Name = "Tốc độ bay Săn GEMS", Range = {1, 50}, Increment = 1, CurrentValue = 20, Callback = function(v) _G.GemsSpeed = v end})
-ConfigTab:CreateSlider({Name = "Tốc độ bay đi KHOAN", Range = {1, 30}, Increment = 1, CurrentValue = 8, Callback = function(v) _G.DrillSpeed = v end})
-ConfigTab:CreateSlider({Name = "Độ cao bay (Fly Height)", Range = {100, 400}, Increment = 5, CurrentValue = 225, Callback = function(v) _G.FlyHeight = v end})
-ConfigTab:CreateSlider({Name = "Thời gian khoan (Giây)", Range = {10, 600}, Increment = 10, CurrentValue = 300, Callback = function(v) _G.WaitAtDrill = v end})
-ConfigTab:CreateSlider({Name = "Thời gian nghỉ lụm Gems", Range = {1, 10}, Increment = 1, CurrentValue = 2, Callback = function(v) _G.GemsRest = v end})
+ConfigTab:CreateInput({
+   Name = "Tốc độ bay Săn GEMS",
+   PlaceholderText = "Nhập số (Hiện tại: 20)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then _G.GemsSpeed = num end
+   end,
+})
+
+ConfigTab:CreateInput({
+   Name = "Tốc độ bay đi KHOAN",
+   PlaceholderText = "Nhập số (Hiện tại: 3)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then _G.DrillSpeed = num end
+   end,
+})
+
+ConfigTab:CreateInput({
+   Name = "Độ cao bay (Fly Height)",
+   PlaceholderText = "Nhập số (Hiện tại: 170)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then _G.FlyHeight = num end
+   end,
+})
+
+ConfigTab:CreateInput({
+   Name = "Thời gian khoan (Giây)",
+   PlaceholderText = "Nhập số (Hiện tại: 590)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then _G.WaitAtDrill = num end
+   end,
+})
+
+ConfigTab:CreateInput({
+   Name = "Thời gian nghỉ lụm Gems",
+   PlaceholderText = "Nhập số (Hiện tại: 10)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then _G.GemsRest = num end
+   end,
+})
 
 -- Anti-AFK
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
