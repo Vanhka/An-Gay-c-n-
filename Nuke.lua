@@ -2,8 +2,8 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "KHA PRO - ANTI-BASE GEMS",
-   LoadingTitle = "chạy lỏ thấy moẹ...",
-   LoadingSubtitle = "mù đường",
+   LoadingTitle = "Đang khôi phục cài đặt gốc...",
+   LoadingSubtitle = "Chỉ tập trung vào Gems thật",
    ConfigurationSaving = {Enabled = true, FolderName = "KhaConfig"}
 })
 
